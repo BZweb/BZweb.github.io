@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     <title>R Dataset D3 Visualization</title>
+     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+<style>
+	body {
+	  font: 10px sans-serif;
+	}
+
+	h1 {
+		width: 900px;
+		text-align: center;
+		font-family: "Trebuchet MS", Helvetica, sans-serif;
+		font-size: 35px;
+	}
+
+	h2 {
+		margin-left:450px;
+		font-family: "Trebuchet MS", Helvetica, sans-serif;
+		font-size: 20px;
+	}
+
+	p {
+		width: 900px;
+		text-align: left;
+		margin:10px;
+		font-size: 15px;
+	}
+	
+	
+	.axis path,
+	.axis line {
+		fill: none;
+		stroke: #3399aa;
+		shape-rendering: crispEdges;
+	}
+
+	button {
+		  display: inline-block;
+		  padding: 10px 15px;
+		  font-size: 15px;
+		  cursor: pointer;
+		  text-align: center;
+		  text-decoration: none;
+		  outline: none;
+		  color: #fff;
+		  background-color: #4CAF50;
+		  border: none;
+		  border-radius: 15px;
+		  box-shadow: 0 9px #999;
+	}
+
+	button:hover {background-color: #3e8e41}
+
+	button:active {
+		  background-color: #3e8e41;
+		  box-shadow: 0 5px #666;
+		  transform: translateY(4px);
+	}
+
+	
+
+</style>
+<body>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	
+	<h1>Did You Have Affairs in the Past Year?</h1>
+	<h2>An R Dataset from 1978</h2>
+	<p>Overview: Out of 601 participants, 150 claimed that they had affairs in the past year and 451 claimed not, the ratio was about 1:3. We’re trying to identify some subgroups of people who had a higher ratio than 1:3, in other words, people with certain characteristics who tended to have affairs in the past year. Factors in consideration included had children or not, religion status, number of years married and marriage satisfaction rating. </p>
+	<p><strong>If you would like to see the overview on the first page again, please refresh the page.</strong></p>
+	<p id="pContainer"></p>
+
+
+	<button id="btn1">Do You Have Kids?</button>
+	<button id="btn2">Are You A Religious Person?</button>
+	<button id="btn3">How Long Have You Been Married?</button>
+	<button id="btn4">Are You Happily Married?</button>
+
+	<div id="chartContainer">
+	<script type="text/javascript">
+	var margin = {top: 20, right: 20, bottom: 30, left: 40},
+		width = 1000 - margin.left - margin.right,
+		height = 400 - margin.top - margin.bottom;
+
+	var x0 = d3.scale.ordinal()
+		.rangeRoundBands([0, width - 150], .2);
+
+	var x1 = d3.scale.ordinal();
+
+	var y = d3.scale.linear()
+		.range([height, 0]);
+
+	var color = d3.scale.ordinal()
+		.range(["#FF6D57","#FFC37A", "#D6FF76", "#66E86D", "#7DFFD4","#66C5E8","#8597FF"]);
+	  
+	var xAxis = d3.svg.axis()
+		.scale(x0)
+		.orient("bottom");
+
+	var yAxis = d3.svg.axis()
+		.scale(y)
+		.orient("left")
+		.tickFormat(d3.format(".2s"));
+		
+	var svg = d3.select("body").append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	d3.csv("https://bzweb.github.io/data/affairsSum.csv", function(error, data) {
+		if (error) throw error;
+    
+		var fields = ["Group"]
+
+		data.forEach(function(d) {
+		d.epi = fields.map(function(name) { return {name: name, value: +d[name]}; });
+		});
+
+		x0.domain(data.map(function(d) { return d.AffairsLastYear; }));
+		x1.domain(fields).rangeRoundBands([0, x0.rangeBand()]);
+		y.domain([0, d3.max(data, function(d) { return d3.max(d.epi, function(d) { return d.value; }); })]);
+
+		svg.append("g")
+		  .attr("class", "x axis")
+		  .attr("transform", "translate(0," + height + ")")
+		  .call(xAxis);
+    
+		svg.append("g")
+		  .attr("class", "y axis")
+		  .call(yAxis)
+		.append("text")
+		  .attr("transform", "rotate(-90)")
+		  .attr("y", 5)
+		  .attr("dy", ".71em")
+		  .style("text-anchor", "end");
+
+		var yesno = svg.selectAll(".AffairsLastYear")
+		  .data(data)
+		.enter().append("g")
+		  .attr("class", "affairs")
+		  .attr("transform", function(d) { return "translate(" + x0(d.AffairsLastYear) + ",0)"; });
+
+		yesno.selectAll("rect")
+		  .data(function(d) { return d.epi; })
+		.enter().append("rect").attr("width", x1.rangeBand())
+		  .attr("x", function(d) { return x1(d.name); })
+		  .attr("y", function(d) { return y(d.value); })
+		  .attr("height", function(d) { return height - y(d.value); })
+		.on("mouseover", function(d, i) {
+                div.style("left", d3.event.pageX+10+"px");
+                div.style("top", d3.event.pageY-25+"px");
+                div.style("display", "inline-block");
+                div.html((d.name)+"<br> "+(d.value));
+  			})
+		  .style("fill", function(d) { return color(d.value); });
+		  
+		// add annotations
+		yesno.selectAll("text")
+		  .data(function(d) { return d.epi; })
+		.enter().append("text")		
+		.attr("x", function(d) { return x1(d.name); })
+		.attr("y", function(d) { return y(d.value); })  
+		.attr("dx", 146)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "middle")
+		.attr("fill", "black")
+		.attr("stroke", "none")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")		
+		.text(function(d) { return (d.value); });  
+
+
+		var legend = svg.selectAll(".legend")
+		  .data(fields.slice())
+		  .enter().append("g")
+		  .attr("class", "legend")
+		  .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+
+		});
+	
+	</script>
+	<script type="text/javascript">
+			d3.select("#btn1").on("click", function(){
+				d3.select("svg").remove();
+	var svg = d3.select("body").append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	d3.csv("https://bzweb.github.io/data/affairsSum.csv", function(error, data) {
+		if (error) throw error;
+
+		var fields = ["Nokids","Havekids"]
+
+		data.forEach(function(d) {
+		d.epi = fields.map(function(name) { return {name: name, value: +d[name]}; });
+		});
+
+		x0.domain(data.map(function(d) { return d.AffairsLastYear; }));
+		x1.domain(fields).rangeRoundBands([0, x0.rangeBand()]);
+		y.domain([0, d3.max(data, function(d) { return d3.max(d.epi, function(d) { return d.value; }); })]);
+
+		svg.append("g")
+		  .attr("class", "x axis")
+		  .attr("transform", "translate(0," + height + ")")
+		  .call(xAxis);
+    
+		svg.append("g")
+		  .attr("class", "y axis")
+		  .call(yAxis)
+		.append("text")
+		  .attr("transform", "rotate(-90)")
+		  .attr("y", 5)
+		  .attr("dy", ".71em")
+		  .style("text-anchor", "end");
+
+		var yesno = svg.selectAll(".AffairsLastYear")
+		  .data(data)
+		.enter().append("g")
+		  .attr("class", "affairs")
+		  .attr("transform", function(d) { return "translate(" + x0(d.AffairsLastYear) + ",0)"; });
+
+		yesno.selectAll("rect")
+		  .data(function(d) { return d.epi; })
+		.enter().append("rect").attr("width", x1.rangeBand())
+		  .attr("x", function(d) { return x1(d.name); })
+		  .attr("y", function(d) { return y(d.value); })
+		  .attr("height", function(d) { return height - y(d.value); })
+		  .on("mouseover", function(d, i) {
+                div.style("left", d3.event.pageX+10+"px");
+                div.style("top", d3.event.pageY-25+"px");
+                div.style("display", "inline-block");
+                div.html((d.name)+"<br> "+(d.value));
+  			})
+		  .style("fill", function(d) { return color(d.name); });
+		
+		yesno.selectAll("text")
+		  .data(function(d) { return d.epi; })
+		.enter().append("text")		
+		.attr("x", function(d) { return x1(d.name); })
+		.attr("y", function(d) { return y(d.value); })  
+		.attr("dx", 70)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "middle")
+		.attr("fill", "black")
+		.attr("stroke", "none")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")		
+		.text(function(d) { return (d.value); });
+  	  
+		var legend = svg.selectAll(".legend")
+		  .data(fields.slice())
+		  .enter().append("g")
+		  .attr("class", "legend")
+		  .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+		legend.append("rect")
+		  .attr("x", width - 18)
+		  .attr("width", 18)
+		  .attr("height", 18)
+		  .style("fill", color);
+
+		legend.append("text")
+		  .attr("x", width - 24)
+		  .attr("y", 9)
+		  .attr("dy", ".35em")
+		  .style("text-anchor", "end")
+		  .text(function(d) { return d; });
+		});
+		
+		document.getElementById("pContainer").innerHTML = "First, let’s start with an easy factor, have children or not, since it’s a binary variable. We can see that for people who have kids, the ratio of “Yes” to “No” (the question: did you have affairs last year) was 123:307, close to 1:3; However, for people who don’t have kids, the ratio was 27:144(close to 1:5), they had much lower possibility of having affairs. We won’t jump into conclusion that there might be some correlation between having kids and having affairs, but it seems that kids had sort of influence here.";
+	});
+	</script>	
+  
+	
+	<script type="text/javascript">
+			d3.select("#btn2").on("click", function(){
+				d3.select("svg").remove();
+	var svg = d3.select("body").append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	d3.csv("https://bzweb.github.io/data/affairsSum.csv", function(error, data) {
+		if (error) throw error;
+
+		var fields = ["Anti religious","Not religious","Slightly religious","Somewhat religious","Very religious"]
+
+		data.forEach(function(d) {
+		d.epi = fields.map(function(name) { return {name: name, value: +d[name]}; });
+		});
+
+		x0.domain(data.map(function(d) { return d.AffairsLastYear; }));
+		x1.domain(fields).rangeRoundBands([0, x0.rangeBand()]);
+		y.domain([0, d3.max(data, function(d) { return d3.max(d.epi, function(d) { return d.value; }); })]);
+
+		svg.append("g")
+		  .attr("class", "x axis")
+		  .attr("transform", "translate(0," + height + ")")
+		  .call(xAxis);
+    
+		svg.append("g")
+		  .attr("class", "y axis")
+		  .call(yAxis)
+		.append("text")
+		  .attr("transform", "rotate(-90)")
+		  .attr("y", 5)
+		  .attr("dy", ".71em")
+		  .style("text-anchor", "end");
+
+		var yesno = svg.selectAll(".AffairsLastYear")
+		  .data(data)
+		.enter().append("g")
+		  .attr("class", "affairs")
+		  .attr("transform", function(d) { return "translate(" + x0(d.AffairsLastYear) + ",0)"; });
+
+		yesno.selectAll("rect")
+		  .data(function(d) { return d.epi; })
+		.enter().append("rect").attr("width", x1.rangeBand())
+		  .attr("x", function(d) { return x1(d.name); })
+		  .attr("y", function(d) { return y(d.value); })
+		  .attr("height", function(d) { return height - y(d.value); })
+		  .on("mouseover", function(d, i) {
+                div.style("left", d3.event.pageX+10+"px");
+                div.style("top", d3.event.pageY-25+"px");
+                div.style("display", "inline-block");
+                div.html((d.name)+"<br> "+(d.value));
+  			})
+		  .style("fill", function(d) { return color(d.name); });
+		
+		yesno.selectAll("text")
+		  .data(function(d) { return d.epi; })
+		.enter().append("text")		
+		.attr("x", function(d) { return x1(d.name); })
+		.attr("y", function(d) { return y(d.value); })  
+		.attr("dx", 27)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "middle")
+		.attr("fill", "black")
+		.attr("stroke", "none")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")		
+		.text(function(d) { return (d.value); });
+  	  
+		var legend = svg.selectAll(".legend")
+		  .data(fields.slice())
+		  .enter().append("g")
+		  .attr("class", "legend")
+		  .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+		legend.append("rect")
+		  .attr("x", width - 18)
+		  .attr("width", 18)
+		  .attr("height", 18)
+		  .style("fill", color);
+
+		legend.append("text")
+		  .attr("x", width - 24)
+		  .attr("y", 9)
+		  .attr("dy", ".35em")
+		  .style("text-anchor", "end")
+		  .text(function(d) { return d; });
+		});
+		
+		document.getElementById("pContainer").innerHTML = "Are you a religious person? It’s very obvious religions have some restrains on having affairs. For somewhat religious and very religious people the ratio were way lower than 1:3(33:157 and 13:57 almost close to 1:5). While the ratio for anti-religious and slightly religious people were about 1:2(20:28 and 43:86 respectively) meaning half of them had affairs and the ratio for slightly religious people was the exact average 1:3(41:123).";
+	});
+	</script>
+	<script type="text/javascript">
+	d3.select("#btn3").on("click", function(){
+	d3.select("svg").remove();
+	var svg = d3.select("body").append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	d3.csv("https://bzweb.github.io/data/affairsSum.csv", function(error, data) {
+		if (error) throw error;
+    
+		var fields = [">0.75 yrs",">1.5 yrs",">4.0 yrs",">7.0 yrs",	">10.0 yrs",">15.0 yrs"]
+
+		data.forEach(function(d) {
+		d.epi = fields.map(function(name) { return {name: name, value: +d[name]}; });
+		});
+
+		x0.domain(data.map(function(d) { return d.AffairsLastYear; }));
+		x1.domain(fields).rangeRoundBands([0, x0.rangeBand()]);
+		y.domain([0, d3.max(data, function(d) { return d3.max(d.epi, function(d) { return d.value; }); })]);
+
+		svg.append("g")
+		  .attr("class", "x axis")
+		  .attr("transform", "translate(0," + height + ")")
+		  .call(xAxis);
+    
+		svg.append("g")
+		  .attr("class", "y axis")
+		  .call(yAxis)
+		.append("text")
+		  .attr("transform", "rotate(-90)")
+		  .attr("y", 5)
+		  .attr("dy", ".71em")
+		  .style("text-anchor", "end");
+
+		var yesno = svg.selectAll(".AffairsLastYear")
+		  .data(data)
+		.enter().append("g")
+		  .attr("class", "affairs")
+		  .attr("transform", function(d) { return "translate(" + x0(d.AffairsLastYear) + ",0)"; });
+
+		yesno.selectAll("rect")
+		  .data(function(d) { return d.epi; })
+		.enter().append("rect").attr("width", x1.rangeBand())
+		  .attr("x", function(d) { return x1(d.name); })
+		  .attr("y", function(d) { return y(d.value); })
+		  .attr("height", function(d) { return height - y(d.value); })
+		.on("mouseover", function(d, i) {
+                div.style("left", d3.event.pageX+10+"px");
+                div.style("top", d3.event.pageY-25+"px");
+                div.style("display", "inline-block");
+                div.html((d.name)+"<br> "+(d.value));
+  			})
+		  .style("fill", function(d) { return color(d.name); });
+		  
+		// add annotations
+		yesno.selectAll("text")
+		  .data(function(d) { return d.epi; })
+		.enter().append("text")		
+		.attr("x", function(d) { return x1(d.name); })
+		.attr("y", function(d) { return y(d.value); })  
+		.attr("dx", 24)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "middle")
+		.attr("fill", "black")
+		.attr("stroke", "none")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")		
+		.text(function(d) { return (d.value); });  
+
+
+		var legend = svg.selectAll(".legend")
+		  .data(fields.slice())
+		  .enter().append("g")
+		  .attr("class", "legend")
+		  .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+		legend.append("rect")
+		  .attr("x", width - 18)
+		  .attr("width", 18)
+		  .attr("height", 18)
+		  .style("fill", color);
+
+		legend.append("text")
+		  .attr("x", width - 24)
+		  .attr("y", 9)
+		  .attr("dy", ".35em")
+		  .style("text-anchor", "end")
+		  .text(function(d) { return d; });
+		});
+		document.getElementById("pContainer").innerHTML = "How long have you been married? For those newlyweds (<0.75 and <1.5 years), the ratio of yes to no was understandably lower than 1:3(1:9 and 1:6 respectively). If we could apply this number to large population, it suggests 1 out of 9 people married less than 9 months ago would have affairs while on average 1 out 3 people would do so. After 1.5 years, things started to get worse, we could see the ratio getting higher and higher from people married for 4 years’ 27:78 (1:2.9) to people married for 7 years’ 23:59(1:2.6) , to10 years’ 21:49(1:2.3) and finally to people who married for more than 15 years’ 62:142(1:2.29). Based that, we might be able to conclude that the longer marriage people have, the higher possibility they would have affairs. And “the seven year itch” is somewhat true but “the ten year” is even itchier than that.";
+	});
+	</script>
+	<script type="text/javascript">
+	d3.select("#btn4").on("click", function(){
+	d3.select("svg").remove();
+	var svg = d3.select("body").append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	d3.csv("https://bzweb.github.io/data/affairsSum.csv", function(error, data) {
+		if (error) throw error;
+    
+		var fields = ["Very unhappily married","Unhappily married","Average married",	"Happily married","Very happily married"]
+
+		data.forEach(function(d) {
+		d.epi = fields.map(function(name) { return {name: name, value: +d[name]}; });
+		});
+
+		x0.domain(data.map(function(d) { return d.AffairsLastYear; }));
+		x1.domain(fields).rangeRoundBands([0, x0.rangeBand()]);
+		y.domain([0, d3.max(data, function(d) { return d3.max(d.epi, function(d) { return d.value; }); })]);
+
+		svg.append("g")
+		  .attr("class", "x axis")
+		  .attr("transform", "translate(0," + height + ")")
+		  .call(xAxis);
+    
+		svg.append("g")
+		  .attr("class", "y axis")
+		  .call(yAxis)
+		.append("text")
+		  .attr("transform", "rotate(-90)")
+		  .attr("y", 5)
+		  .attr("dy", ".71em")
+		  .style("text-anchor", "end");
+
+		var yesno = svg.selectAll(".AffairsLastYear")
+		  .data(data)
+		.enter().append("g")
+		  .attr("class", "affairs")
+		  .attr("transform", function(d) { return "translate(" + x0(d.AffairsLastYear) + ",0)"; });
+
+		yesno.selectAll("rect")
+		  .data(function(d) { return d.epi; })
+		.enter().append("rect").attr("width", x1.rangeBand())
+		  .attr("x", function(d) { return x1(d.name); })
+		  .attr("y", function(d) { return y(d.value); })
+		  .attr("height", function(d) { return height - y(d.value); })
+		.on("mouseover", function(d, i) {
+                div.style("left", d3.event.pageX+10+"px");
+                div.style("top", d3.event.pageY-25+"px");
+                div.style("display", "inline-block");
+                div.html((d.name)+"<br> "+(d.value));
+  			})
+		  .style("fill", function(d) { return color(d.name); });
+		  
+		// add annotations
+		yesno.selectAll("text")
+		  .data(function(d) { return d.epi; })
+		.enter().append("text")		
+		.attr("x", function(d) { return x1(d.name); })
+		.attr("y", function(d) { return y(d.value); })  
+		.attr("dx", 27)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "middle")
+		.attr("fill", "black")
+		.attr("stroke", "none")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")		
+		.text(function(d) { return (d.value); });  
+
+
+		var legend = svg.selectAll(".legend")
+		  .data(fields.slice())
+		  .enter().append("g")
+		  .attr("class", "legend")
+		  .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+		legend.append("rect")
+		  .attr("x", width - 18)
+		  .attr("width", 18)
+		  .attr("height", 18)
+		  .style("fill", color);
+
+		legend.append("text")
+		  .attr("x", width - 24)
+		  .attr("y", 9)
+		  .attr("dy", ".35em")
+		  .style("text-anchor", "end")
+		  .text(function(d) { return d; });
+		});
+		document.getElementById("pContainer").innerHTML = "Are you happily married?  It’s not surprising to see that people who are in very unhappy and unhappy marriage tended to have affairs (their ratio were both 1:1, simplified from 8:8 and 33:33). While people who were in happy marriage had a ratio close to the average 1:3(48:146), average marriage had a lower ratio, 27:66(1:2.4),  than happy marriage which is interesting, people in very happy marriage got a much lower ratio 1:5.8 (34:198) as expected.";
+	});
+	</script>
+	
+	</body>
+</html>
